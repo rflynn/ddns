@@ -29,6 +29,11 @@ TYPE="A"
 # Get the external IP address from OpenDNS (more reliable than other providers)
 IP=`dig +short myip.opendns.com @resolver1.opendns.com`
 
+function ts()
+{
+    date -u +'%Y-%m-%dT%H:%M:%SZ'
+}
+
 function valid_ip()
 {
     local  ip=$1
@@ -49,6 +54,7 @@ function valid_ip()
 # Get current dir
 # (from http://stackoverflow.com/a/246128/920350)
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo "DIR=$DIR"
 LOGFILE="$DIR/update-route53.log"
 IPFILE="$DIR/update-route53.ip"
 
@@ -58,17 +64,14 @@ if ! valid_ip $IP; then
 fi
 
 # Check if the IP has changed
-if [ ! -f "$IPFILE" ]
-    then
-    touch "$IPFILE"
-fi
 
+test -f "$IPFILE" || touch "$IPFILE"
 if grep -Fxq "$IP" "$IPFILE"; then
     # code if found
-    echo "IP is still $IP. Exiting" >> "$LOGFILE"
+    echo "$(ts) IP is still $IP. Exiting" >> "$LOGFILE"
     exit 0
 else
-    echo "IP has changed to $IP" >> "$LOGFILE"
+    echo "$(ts) IP has changed to $IP" >> "$LOGFILE"
     # Fill a temp file with valid JSON
     TMPFILE=$(mktemp /tmp/temporary-file.XXXXXXXX)
     cat > ${TMPFILE} << EOF
